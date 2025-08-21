@@ -1,8 +1,20 @@
 #!/bin/bash
-cd /home/ubuntu/demo-flask || exit
+
+# Go to project directory
+cd /home/ubuntu/erp-project/github-action-devops-flaskapp || exit
+
+# Reset any local changes and pull latest code
+git reset --hard HEAD
+git clean -fd
 git pull origin main
-source venv/bin/activate
+
+# Activate virtual environment and install dependencies
+source env/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
-pkill -f "python3 app.py" || true
-nohup python3 app.py &
+deactivate
+
+# Restart Flask via systemd
+sudo systemctl restart flask-app.service
+
 echo "App deployed successfully!"
