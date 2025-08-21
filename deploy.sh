@@ -21,9 +21,10 @@ git clean -fd
 git pull origin main || { log "Git pull failed"; exit 1; }
 log "Code updated from GitHub"
 
-# Check if virtual environment exists, if not create it
-if [ ! -f "$PROJECT_DIR/env/bin/activate" ]; then
-    log "Virtual environment not found, creating..."
+# Check if virtual environment exists and is valid
+if [ ! -f "$PROJECT_DIR/env/bin/activate" ] || [ ! -x "$PROJECT_DIR/env/bin/python" ]; then
+    log "Virtual environment missing or broken, creating a new one..."
+    rm -rf env
     python3 -m venv env || { log "Failed to create virtual environment"; exit 1; }
     log "Virtual environment created"
 fi
