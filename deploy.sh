@@ -7,9 +7,11 @@ log() {
 
 log "Starting deployment..."
 
-# Go to project directory
+# Project directory
 PROJECT_DIR="/home/ubuntu/erp-project/github-action-devops-flaskapp"
-cd $PROJECT_DIR || { log "Failed to cd into $PROJECT_DIR"; exit 1; }
+
+# Go to project directory
+cd "$PROJECT_DIR" || { log "Failed to cd into $PROJECT_DIR"; exit 1; }
 log "Changed directory to $PROJECT_DIR"
 
 # Reset local changes and pull latest code
@@ -19,16 +21,33 @@ git clean -fd
 git pull origin main || { log "Git pull failed"; exit 1; }
 log "Code updated from GitHub"
 
-# Activate virtual environment and install dependencies
+# Check if virtual environment exists, if not create it
+if [ ! -f "$PROJECT_DIR/env/bin/activate" ]; then
+    log "Virtual environment not found, creating..."
+    python3 -m venv env || { log "Failed to create virtual environment"; exit 1; }
+    log "Virtual environment created"
+fi
+
+# Activate virtual environment
 log "Activating virtual environment..."
 source env/bin/activate || { log "Failed to activate virtual environment"; exit 1; }
-log "Installing/upgrading dependencies..."
-pip install --upgrade pip
-pip install -r requirements.txt || { log "Pip install failed"; deactivate; exit 1; }
-deactivate
-log "Dependencies installed and virtual environment deactivated"
 
-# Restart Flask service via systemd
+# Debug info
+log "Virtual environment PATH: $VIRTUAL_ENV"
+log "Which python: $(which python)"
+log "Which pip: $(which pip)"
+log "Python version: $(python --version)"
+
+# Upgrade pip and install dependencies
+log "Installing/upgrading dependencies..."
+"$PROJECT_DIR/env/bin/pip" install --upgrade pip || { log "Failed to upgrade pip"; deactivate; exit 1; }
+"$PROJECT_DIR/env/bin/pip" install -r requirements.txt || { log "Pip install failed"; deactivate; exit 1; }
+
+log "Dependencies installed successfully"
+deactivate
+log "Virtual environment deactivated"
+
+# Restart Flask service
 log "Restarting Flask service..."
 sudo systemctl restart flask-app.service || { log "Failed to restart Flask service"; exit 1; }
 log "Flask service restarted successfully"
